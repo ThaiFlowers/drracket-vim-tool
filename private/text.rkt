@@ -1004,10 +1004,13 @@
              (set-mode! 'command)]
             [#\backspace
              (cond [(queue-empty? search-queue)
+                    (set-searching-state #f #f #t #f)
                     (set-mode! 'command)]
                    [else
                     (dequeue-char!)
-                    (run-search)])]
+                    (if (queue-empty? search-queue)
+                        (set-searching-state #f #f #t #f)
+                        (run-search))])]
             [(? char?)
              (enqueue-char! key)
              (run-search)]
@@ -1253,19 +1256,19 @@
       (define/private (insert-line-after)
         (begin-edit-sequence)
         (set-position (send this paragraph-end-position
-			      (send this line-paragraph
-				    (send this position-line vim-position))))
+                        (send this line-paragraph
+                          (send this position-line vim-position))))
         (send this insert-return)
         (end-edit-sequence))
 
       ;; insert line before the line the cursor is currently on
       (define/private (insert-line-before)
         (begin-edit-sequence)
-	(define line (send this position-line vim-position))
-	(set-position (max (- (send this paragraph-start-position (send this line-paragraph line)) 1) 0))
+        (define line (send this position-line vim-position))
+        (set-position (max (- (send this paragraph-start-position (send this line-paragraph line)) 1) 0))
         (send this insert-return)
-	(when (= line 0)
-	  (set-position 0))
+        (when (= line 0)
+          (set-position 0))
         (end-edit-sequence))
 
       ;; -> (values int int)
