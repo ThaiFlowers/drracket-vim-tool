@@ -454,7 +454,6 @@
            (insert-line-before)]
           ['insert-next-line
            (set-mode! 'insert)
-           (define-values (_start end) (get-current-line-start-end))
            (insert-line-after)]
           ['insert-at-delete
            (do-delete-insertion-point)
@@ -1252,18 +1251,21 @@
 
       ;; insert line after the line the cursor is currently on
       (define/private (insert-line-after)
-        (define-values (_start end) (get-current-line-start-end))
         (begin-edit-sequence)
-        (set-position end)
+        (set-position (send this paragraph-end-position
+			      (send this line-paragraph
+				    (send this position-line vim-position))))
         (send this insert-return)
         (end-edit-sequence))
 
       ;; insert line before the line the cursor is currently on
       (define/private (insert-line-before)
-        (define-values (start _end) (get-current-line-start-end))
         (begin-edit-sequence)
-        (set-position (if (zero? start) start (sub1 start)))
+	(define line (send this position-line vim-position))
+	(set-position (max (- (send this paragraph-start-position (send this line-paragraph line)) 1) 0))
         (send this insert-return)
+	(when (= line 0)
+	  (set-position 0))
         (end-edit-sequence))
 
       ;; -> (values int int)
