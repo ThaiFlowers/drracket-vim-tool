@@ -287,6 +287,7 @@
   (match code
     [#\a (match (send (next-key) get-key-code)
            [#\w 'a-word]
+           [#\s 'a-sentence]
            [#\p 'a-paragraph]
            [(or #\b #\( #\)) 'a-block]
            [_    #f])]

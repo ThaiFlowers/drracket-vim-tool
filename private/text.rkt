@@ -36,6 +36,7 @@
                    insert
                    copy paste kill undo redo delete
                    line-start-position line-end-position position-line
+                   paragraph-start-position paragraph-end-position position-paragraph
                    get-view-size local-to-global
                    find-wordbreak get-admin
                    get-style-list get-padding)
@@ -315,6 +316,7 @@
                get-start-position get-end-position
                copy paste kill undo redo delete insert
                line-start-position line-end-position position-line
+               paragraph-start-position paragraph-end-position position-paragraph
                last-line last-position
                local-to-global find-wordbreak
                begin-edit-sequence end-edit-sequence
@@ -592,6 +594,7 @@
         (define ok?
           (match motion
             ['a-word (do-a-word do-range)]
+            ['a-sentence (do-a-sentence do-range)]
             ['word-forward (do-word-forward do-range)]
             ['word-backward (do-word-backward do-range)]
             ;; FIXME: this should be generalized to non-paren matches
@@ -757,6 +760,39 @@
                (set-vim-position! orig)
                (f word-start orig)
                (end-edit-sequence))))
+
+      (define (do-a-sentence f)
+        (letrec
+              ([start-par (send this paragraph-start-position (position-paragraph vim-position))]
+               [end-par (paragraph-end-position (position-paragraph vim-position))]
+               [start-dot (find-string "." 'backward vim-position start-par)]
+               [end-dot (find-string "." 'forward vim-position end-par)]
+               ;; to make start-pos leave quotes alone, introduce an if that increments
+               ;; 1 position when start-par equals ", like below in end-pos
+               [start-pos (if start-dot start-dot start-par)]
+               ;; nested if to get behavior similar to vim
+               ;; remove to get behavior more fitting scheme (quotes left alone)
+               [end-pos (if end-dot
+                            (if (eq? (get-character (+ end-dot 1)) #\")
+                                (+ end-dot 2)
+                                (+ end-dot 1))
+                            end-par)])
+          (cond [;; whitespace before sentence and not the first sentence in the paragraph
+                 (let ([bpos (skip-whitespace-backward start-pos)])
+                   (and (not (= bpos start-pos))
+                        (= (position-paragraph bpos) (position-paragraph start-pos))
+                        bpos))
+                 =>
+                 (λ (bpos) (f bpos end-pos))]
+                [;; whitespace after sentence up to end of paragraph
+                 (let ([fpos (skip-whitespace-forward end-pos)])
+                   (and (not (= fpos end-pos))
+                        (= (position-paragraph fpos) (position-paragraph end-pos))
+                        fpos))
+                 =>
+                 (λ (fpos) (f start-pos fpos))]
+                [;; otherwise do f with just the sentence
+                 (f start-pos end-pos)])))
 
       (define (do-character f [dir 'forward])
         (cond [(eq? dir 'forward)
