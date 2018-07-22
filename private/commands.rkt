@@ -151,6 +151,8 @@
     [#\^     'start-of-line-content]
     [#\%     'match]
     [#\G     'end-of-file]
+    [#\{     'prev-paragraph]
+    [#\}     'next-paragraph]
 
     ;; editing
     [#\J     'join-line]

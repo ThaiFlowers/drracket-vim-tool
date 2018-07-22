@@ -508,6 +508,32 @@
                         ['forward  (set-vim-position! (sub1 e))])))]
           ['start-of-file (handle-goto (goto-command 1))]
           ['end-of-file   (handle-goto (goto-command 'last-line))]
+          ['prev-paragraph            (let
+                                        ([cur-line (send this position-line vim-position)])
+                                        ;; don't try to move past first line
+                                        (unless (eq? cur-line 0)
+                                        ;; if on blank, skip intermediate blanks
+                                          (do ([i cur-line (- i 1)]) 
+                                             ([or (not (empty-line?)) (= 0 i)])
+                                             (cmd-move-position 'up))
+                                        ;; skip non-blanks until next blank
+                                          (do ([i cur-line (- i 1)])
+                                             ([or (and (empty-line?)
+                                                       (not (eq? cur-line i)))
+                                                  (= 0 i)])
+                                             (cmd-move-position 'up))))]
+          ['next-paragraph            (letrec
+                                        ([cur-line (send this position-line vim-position)]
+                                        [last-line (send this last-line)])
+                                        (unless (eq? cur-line last-line)
+                                         (do ([i cur-line (+ i 1)])
+                                             ([or (not (empty-line?)) (= i last-line)])
+                                             (cmd-move-position 'down))
+                                         (do ([i cur-line (+ i 1)])
+                                             ([or (and (empty-line?)
+                                                       (not (eq? cur-line i)))
+                                                  (= last-line i)])
+                                             (cmd-move-position 'down))))]
 
           ;; tab management
           ['next-tab (send parent-frame next-tab)]
