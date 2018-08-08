@@ -631,7 +631,9 @@
             ['left  (do-character do-range 'backward)]
             ['down  (do-one-line do-range 'down)]
             ['up    (do-one-line do-range 'up)]
-            ['right (do-character do-range)]))
+            ['right (do-character do-range)]
+            ['prev-paragraph (do-paragraph do-range 'prev-paragraph)]
+            ['next-paragraph (do-paragraph do-range 'next-paragraph)]))
         (when ok?
           (do-post)))
 
@@ -1246,6 +1248,19 @@
            (when maybe-fwd
              (action 'forward pos maybe-fwd))]
           [_ (void)]))
+
+      ;; for handling "paragraph" (to next empty line after text) motions
+      ;; Depends on current implementation of { and } movement commands
+      ;; Is somewhat slow/inefficient, but atleast the code is straightforward
+      (define/private (do-paragraph action direction)
+            (define old-pos vim-position)
+            (handle-simple-command direction)
+            (define new-pos vim-position)
+            (if (not (eq? old-pos new-pos))
+                (if (< old-pos new-pos)
+                    (action (paragraph-start-position (position-paragraph old-pos)) new-pos)
+                    (action (paragraph-end-position (position-paragraph new-pos)) old-pos))
+                #f))
 
       ;; for handling block motions
       (define/private (do-block action block-kind op-kind)

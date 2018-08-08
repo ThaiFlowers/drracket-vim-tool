@@ -302,6 +302,8 @@
     [#\w     'word-forward]
     [#\b     'word-backward]
     [#\%     'match]
+    [#\{     'prev-paragraph]
+    [#\}     'next-paragraph]
     [#\"     'double-quote]
     [(or #\space #\l) 'right]
     [_   #f]))
