@@ -534,6 +534,9 @@
                                                        (not (eq? cur-line i)))
                                                   (= last-line i)])
                                              (cmd-move-position 'down))))]
+          ['top (handle-goto (goto-command 'top))]
+          ['mid (handle-goto (goto-command 'mid))]
+          ['bot (handle-goto (goto-command 'bot))]
 
           ;; tab management
           ['next-tab (send parent-frame next-tab)]
@@ -638,16 +641,31 @@
           (do-post)))
 
       ;; handle goto commands like gg, G, etc.
+      ;; TODO: If destination line is empty syntax highlighting and line number indicate don't update
       (define/private (handle-goto command)
         (match-define (goto-command line) command)
+        (define top (box 0))
+        (define bot (box 0))
+        (send this get-visible-line-range top bot)
         (define pos
-          (if (eq? line 'last-line)
+          (match line
               ;; use `get-start-of-line` to skip whitespace
               ;; at the start of the line
-              (send this get-start-of-line
-                    (line-start-position (last-line)))
-              (send this get-start-of-line
-                    (line-start-position (sub1 line)))))
+              ['last-line (send this get-start-of-line
+                    (line-start-position (last-line)))]
+              ['top (let [(offset
+                          (if (and (not (eq? 0 (unbox top)))
+                                   (preferences:get 'drracket:module-language-first-line-special?))
+                          1 0))]
+                    (send this get-start-of-line
+                        (line-start-position (+ offset (unbox top)))))]
+              ['bot (send this get-start-of-line
+                    (line-start-position (sub1 (unbox bot))))]
+              ['mid (let [(mid  (round (+ (unbox top) (/ (- (unbox bot) (unbox top)) 2))))]
+                    (send this get-start-of-line
+                        (line-start-position mid)))]
+              [_ (send this get-start-of-line
+                    (line-start-position (sub1 line)))]))
         (set-vim-position! pos))
 
       ;; handle pasting, esp. visual-line type pasting

@@ -153,6 +153,9 @@
     [#\G     'end-of-file]
     [#\{     'prev-paragraph]
     [#\}     'next-paragraph]
+    [#\H     'top]
+    [#\M     'mid]
+    [#\L     'bot]
 
     ;; editing
     [#\J     'join-line]
